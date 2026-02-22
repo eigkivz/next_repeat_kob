@@ -19,7 +19,6 @@ import {
   Phone,
   Save,
   User,
-  X,
 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import Swal from "sweetalert2";
@@ -134,7 +133,7 @@ export default function ApartmentPage() {
   }
 
   return (
-    <div className="container">
+    <div className="container-card">
       <form onSubmit={hdlSaveApartmentData}>
         <Card className="max-w-2xl mx-auto shadow-lg">
         {/* Header */}

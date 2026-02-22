@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { cn } from "@/libs/utils";
+import { cn } from "@/lib/utils";
 
 const Loader2: React.FC<{ className?: string }> = ({ className }) => (
   <svg

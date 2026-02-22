@@ -24,3 +24,12 @@ model Apartment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model RoomType {
+  id        String   @id @default(cuid())
+  name      String
+  price     Int      @default(0)
+  remark    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

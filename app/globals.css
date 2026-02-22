@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-.container {
+.container-card {
     padding: 0px;
     margin: 0 auto;
     max-width: 950px;

@@ -7,10 +7,14 @@ const Sidebar = () => {
       <div className="p-6 text-center bg-slate-800">
         <h1 className="text-2xl font-bold text-white">JS Apartments</h1>
       </div>
-      <div className="text-xl text-white p-5 font-semibold">
+      <div className="flex flex-col gap-5 text-xl text-white p-5 font-semibold">
         <Link href="/home/apartment" className="space-x-3">
           <i className="fa-solid fa-building-user"></i>
           <span>Apartment</span>
+        </Link>
+        <Link href="/home/room-type" className="space-x-3">
+          <i className="fa-solid fa-couch"></i>
+          <span>Room Type</span>
         </Link>
       </div>
     </div>

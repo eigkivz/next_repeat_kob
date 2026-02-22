@@ -1,6 +1,6 @@
 // PUT /api/apartment
 
-import prisma from "@/libs/prisma";
+import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import * as z from "zod";
 
