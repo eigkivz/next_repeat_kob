@@ -12,6 +12,8 @@ import {
 import {
   Building2,
   Hash,
+  Loader2,
+  LoaderCircle,
   Mail,
   MapPin,
   Phone,
@@ -22,7 +24,7 @@ import {
 import { FormEvent, useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import axios from "axios";
-import ApartmentInterface from "@/interface/apartmentInterface";
+import ApartmentInterface from "@/interface/ApartmentInterface";
 
 export default function ApartmentPage() {
   const [aptData, setAptData] = useState<ApartmentInterface>({
@@ -34,6 +36,7 @@ export default function ApartmentPage() {
     lineId: ""
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [ isPageLoading, setIsPageLoading] = useState(true);
 
   useEffect(() => {
     callApartmentData();
@@ -55,7 +58,8 @@ export default function ApartmentPage() {
         return;
       }
       
-      setAptData(apartmentData)
+      setAptData(apartmentData);
+      setIsPageLoading(false);
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -104,6 +108,7 @@ export default function ApartmentPage() {
       callApartmentData();
       clearData();
       setIsLoading(false);
+      setIsPageLoading(false);
     }
   }
 
@@ -116,6 +121,16 @@ export default function ApartmentPage() {
       email: "",
       lineId: ""
     });
+  }
+
+  if (isPageLoading) {
+    return (
+      <div className="container">
+        <div className="flex items-center justify-center h-100">
+          <LoaderCircle size={50} className="w-full animate-spin" />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -272,10 +287,19 @@ export default function ApartmentPage() {
           <Button
             type="submit"
             variant="default"
-            iconRight={<Save className="h-4 w-4" />}
+            iconRight={isLoading ? undefined : <Save className="h-4 w-4" />}
             disabled={isLoading}
           >
-            บันทึกข้อมูล
+            {
+              isLoading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  กำลังบันทึก...
+                </span>
+              ) : (
+                "บันทึกข้อมูล"
+              )
+            }
           </Button>
         </CardFooter>
       </Card>
