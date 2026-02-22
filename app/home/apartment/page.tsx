@@ -1,3 +1,5 @@
+"use client";
+
 import Button from "@/components/button";
 import {
   Card,
@@ -7,12 +9,119 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { Building2, Hash, Mail, MapPin, Phone, Save, User, X } from "lucide-react";
+import {
+  Building2,
+  Hash,
+  Mail,
+  MapPin,
+  Phone,
+  Save,
+  User,
+  X,
+} from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
+import Swal from "sweetalert2";
+import axios from "axios";
+import ApartmentInterface from "@/interface/apartmentInterface";
 
 export default function ApartmentPage() {
+  const [aptData, setAptData] = useState<ApartmentInterface>({
+    name: "",
+    address: "",
+    phone: "",
+    taxCode: "",
+    email: "",
+    lineId: ""
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    callApartmentData();
+  }, []);
+
+  const callApartmentData = async () => {
+    try {
+      const resp = await axios.get("/api/apartment");
+      const apartmentData = (resp.data) as ApartmentInterface;
+
+      if (apartmentData?.message) {
+        Swal.fire({
+          icon: "info",
+          text: apartmentData?.message,
+          title: "ไม่พบข้อมูล",
+          showCancelButton: true
+        });
+
+        return;
+      }
+      
+      setAptData(apartmentData)
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        text: (error as Error).message,
+        title: "Error",
+        showCancelButton: true,
+      });
+    }
+  };
+
+  const hdlSaveApartmentData = async (e: React.FormEvent<HTMLFormElement> ) => {
+    e.preventDefault();
+    try {
+
+      const payload = {
+        name: aptData.name,
+        address: aptData.address,
+        phone: aptData.phone,
+        taxCode: aptData.taxCode,
+        email: aptData.email,
+        lineId: aptData.lineId,
+      };
+
+      setIsLoading(true);
+
+        if (aptData?.id) {
+        return await axios.put("/api/apartment/" + aptData.id, payload);
+      }
+
+      await axios.post("/api/apartment", payload);
+
+      Swal.fire({
+        icon: "success",
+        text: "เพิ่มข้อมูล Apartment สำเร็จ",
+        title: "เพิ่มข้อมูลสำเร็จ"
+      });
+
+    } catch (error) {
+       Swal.fire({
+        icon: "error",
+        text: (error as Error).message,
+        title: "Error",
+        showCancelButton: true,
+      });
+    } finally {
+      callApartmentData();
+      clearData();
+      setIsLoading(false);
+    }
+  }
+
+  const clearData = () => {
+    setAptData({ 
+      name: "",
+      address: "",
+      phone: "",
+      taxCode: "",
+      email: "",
+      lineId: ""
+    });
+  }
+
   return (
     <div className="container">
-      <Card className="max-w-2xl mx-auto shadow-lg">
+      <form onSubmit={hdlSaveApartmentData}>
+        <Card className="max-w-2xl mx-auto shadow-lg">
         {/* Header */}
         <CardHeader className="space-y-2">
           <div className="flex items-center gap-3">
@@ -49,6 +158,8 @@ export default function ApartmentPage() {
                   required
                   placeholder="กรอกชื่อหอพัก"
                   className="input-modal"
+                  value={aptData?.name}
+                  onChange={e => setAptData({...aptData, name: e.target.value})}
                 />
               </div>
 
@@ -64,6 +175,8 @@ export default function ApartmentPage() {
                   rows={3}
                   placeholder="กรอกที่อยู่หอพัก"
                   className="input-textarea"
+                  value={aptData?.address}
+                  onChange={e => setAptData({ ...aptData, address: e.target.value })}
                 ></textarea>
               </div>
 
@@ -79,6 +192,8 @@ export default function ApartmentPage() {
                   required
                   placeholder="เลขประจำตัวผู้เสียภาษี"
                   className="input-modal"
+                  value={aptData?.taxCode}
+                  onChange={e => setAptData({ ...aptData, taxCode: e.target.value })}
                 />
               </div>
             </div>
@@ -105,6 +220,8 @@ export default function ApartmentPage() {
                   required
                   placeholder="08x-xxx-xxxx"
                   className="input-modal"
+                  value={aptData?.phone}
+                  onChange={e => setAptData({ ...aptData, phone: e.target.value })}
                 />
               </div>
 
@@ -119,6 +236,8 @@ export default function ApartmentPage() {
                   type="email"
                   placeholder="example@email.com"
                   className="input-modal"
+                  value={aptData?.email}
+                  onChange={e => setAptData({ ...aptData, email: e.target.value })}
                 />
               </div>
 
@@ -132,7 +251,9 @@ export default function ApartmentPage() {
                   id="lineId"
                   type="text"
                   placeholder="ไอดีไลน์"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="input-modal"
+                  value={aptData?.lineId}
+                  onChange={e => setAptData({...aptData, lineId: e.target.value})}
                 />
               </div>
             </div>
@@ -141,14 +262,24 @@ export default function ApartmentPage() {
 
         {/* Footer Buttons */}
         <CardFooter className="flex justify-end gap-3 border-t pt-6">
-           <Button type="button" variant="outline" iconLeft={<X className="h-4 w-4" />}>
+          {/* <Button
+            type="button"
+            variant="outline"
+            iconLeft={<X className="h-4 w-4" />}
+          >
             ยกเลิก
-          </Button>
-          <Button type="submit" variant="default" iconRight={<Save className="h-4 w-4" />}>
+          </Button> */}
+          <Button
+            type="submit"
+            variant="default"
+            iconRight={<Save className="h-4 w-4" />}
+            disabled={isLoading}
+          >
             บันทึกข้อมูล
           </Button>
         </CardFooter>
       </Card>
+      </form>
     </div>
   );
 }
