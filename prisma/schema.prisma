@@ -30,6 +30,7 @@ model RoomType {
   name      String
   price     Int      @default(0)
   remark    String?
+  status    String   @default("active") // active, inactive
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
