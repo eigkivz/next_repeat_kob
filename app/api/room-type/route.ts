@@ -29,7 +29,7 @@ export async function POST(
       remark: z.string().optional(),
     });
 
-    const payload = req.json();
+    const payload = await req.json();
     const { name, price, remark } = schema.parse(payload);
 
     const res = await prisma.roomType.create({
@@ -44,7 +44,7 @@ export async function POST(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: (error as z.ZodError).message },
+        { error: (error as z.ZodError).issues },
         { status: 400 },
       );
     }

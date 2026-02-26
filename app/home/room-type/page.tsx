@@ -40,15 +40,16 @@ const RoomType = () => {
     hdlFetchData();
   }, []);
 
-  const [roomName, setRoomName] = useState<string>("");
-  const [roomPrice, setRoomPrice] = useState<number>(0);
-  const [roomRemark, setRoomRemark] = useState<string>("");
-  const [roomType, setRoomType] = useState<RoomTypeInterface>();
+  const [name, setName] = useState<string>("");
+  const [price, setPrice] = useState<number>(0);
+  const [remark, setRemark] = useState<string>("");
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [roomType, setRoomType] = useState<RoomTypeInterface[]>();
 
   const hdlFetchData = async () => {
     try {
       const res = await axios.get("/api/room-type");
-      const roomTypeData = res.data as RoomTypeInterface;
+      const roomTypeData = res.data as RoomTypeInterface[];
       setRoomType(roomTypeData);
     } catch (error) {
       Swal.fire({
@@ -59,27 +60,25 @@ const RoomType = () => {
     }
   };
 
-  
   const hdlSubmit = async (e: React.FormEvent<HTMLElement>) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
-      console.log('ok')
       const payload = {
-        roomName,
-        roomPrice,
-        roomRemark
+        name,
+        price,
+        remark,
       };
 
-      
       await axios.post("/api/room-type", payload);
 
+      setIsOpen(false);
       hdlFetchData();
       clearData();
 
       Swal.fire({
         icon: "success",
         text: "บันทึกประเภทห้องสำเร็จ",
-        title: "สำเร็จ"
+        title: "สำเร็จ",
       });
     } catch (error) {
       Swal.fire({
@@ -91,11 +90,9 @@ const RoomType = () => {
   };
 
   const clearData = () => {
-    setRoomType({
-      name: "",
-      price: 0,
-      remark: "",
-    });
+    setName("");
+    setPrice(0);
+    setRemark("");
   };
 
   return (
@@ -128,12 +125,14 @@ const RoomType = () => {
         </CardContent> */}
 
         {/* Dialog modal */}
-        <Dialog>
-          <form onSubmit={hdlSubmit}>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <form id="roomType" onSubmit={hdlSubmit}>
             <DialogTrigger asChild>
-              <Button variant="default">เพิ่มประเภทห้องพัก</Button>
+              <Button variant="default" onClick={() => setIsOpen(true)}>
+                เพิ่มประเภทห้องพัก
+              </Button>
             </DialogTrigger>
-            <DialogContent className="">
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>เพิ่มประเภทห้อง</DialogTitle>
                 <DialogDescription>
@@ -149,10 +148,8 @@ const RoomType = () => {
                     id="name"
                     name="name"
                     placeholder="ใส่ประเภทห้องพัก..."
-                    value={roomName}
-                    onChange={(e) =>
-                      setRoomName(e.target.value)
-                    }
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                   />
                 </Field>
                 <Field>
@@ -162,10 +159,8 @@ const RoomType = () => {
                     id="price"
                     name="price"
                     placeholder="ใส่ราคาห้องพัก..."
-                    value={roomPrice}
-                    onChange={(e) =>
-                      setRoomPrice(Number(e.target.value))
-                    }
+                    value={price}
+                    onChange={(e) => setPrice(Number(e.target.value))}
                   />
                 </Field>
                 <Field>
@@ -174,10 +169,8 @@ const RoomType = () => {
                     id="remark"
                     name="remark"
                     placeholder="ใส่รายละเอียดเพิ่มเติม..."
-                    value={roomRemark}
-                    onChange={(e) =>
-                      setRoomRemark(e.target.value)
-                    }
+                    value={remark}
+                    onChange={(e) => setRemark(e.target.value)}
                   />
                 </Field>
               </FieldGroup>
@@ -186,11 +179,34 @@ const RoomType = () => {
                 <DialogClose asChild>
                   <Button variant="outline">ยกเลิก</Button>
                 </DialogClose>
-                <Button type="submit">บันทึก</Button>
+                <Button form="roomType" type="submit">
+                  บันทึก
+                </Button>
               </DialogFooter>
             </DialogContent>
           </form>
         </Dialog>
+
+        {/* show room type */}
+        <div>
+          {
+            roomType?.map((item, index) => (
+              <div key={index}>
+                <div>
+                  <span>
+                    {item.name}
+                  </span>
+                  <span>
+                    {item.price}
+                  </span>
+                  <span>
+                    {item.remark}
+                  </span>
+                </div>
+              </div>
+            ))
+          }
+        </div>
       </Card>
     </div>
   );
