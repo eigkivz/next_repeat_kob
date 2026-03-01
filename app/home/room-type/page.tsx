@@ -29,6 +29,17 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
 // const mockData = [
 //   { id: 1, name: "room test1" },
 //   { id: 2, name: "room test2" },
@@ -189,23 +200,34 @@ const RoomType = () => {
 
         {/* show room type */}
         <div>
-          {
-            roomType?.map((item, index) => (
-              <div key={index}>
-                <div>
-                  <span>
-                    {item.name}
-                  </span>
-                  <span>
-                    {item.price}
-                  </span>
-                  <span>
-                    {item.remark}
-                  </span>
-                </div>
-              </div>
-            ))
-          }
+          <Table>
+            <TableCaption>ตารางจัดการประเภทห้องพัก</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">ลำดับ</TableHead>
+                <TableHead>ประเภท</TableHead>
+                <TableHead>รายละเอียด</TableHead>
+                <TableHead className="text-right">ราคา</TableHead>
+                <TableHead className="text-center">จัดการ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {roomType?.map((item, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-medium">{++index}</TableCell>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell>{item.remark}</TableCell>
+                  <TableCell className="text-right">
+                    {item.price.toLocaleString("th-TH")}
+                  </TableCell>
+                  <TableCell className="flex flex-row gap-1 justify-center items-center">
+                    <Button variant="default" size="sm">แก้ไข</Button>
+                    <Button variant="destructive" size="sm">ลบ</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </Card>
     </div>
