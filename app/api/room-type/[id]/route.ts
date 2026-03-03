@@ -5,22 +5,27 @@ import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import z from "zod";
 
-const shecma = z.object({
+const schema = z.object({
   name: z.string(),
   price: z.number(),
   remark: z.string().optional(),
 });
 
 export async function PUT(
-  request: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-    const payload = await request.json();
+    const payload = await req.json();
+    const { name, price, remark } = schema.parse(payload);
     await prisma.roomType.update({
       where: { id: id },
-      data: shecma.parse(payload),
+      data: {
+        name: name,
+        price: price,
+        remark: remark,
+      },
     });
 
     return NextResponse.json(
@@ -34,7 +39,7 @@ export async function PUT(
         { status: 400 },
       );
     }
-
+    console.log((error as Error).message);
     return NextResponse.json(
       { error: (error as Error).message },
       { status: 500 },
@@ -52,7 +57,10 @@ export async function DELETE(
       where: { id: id },
       data: { status: "inactive" },
     });
+
+    return NextResponse.json({ message: "ลบข้อมูลสำเร็จ" }, { status: 200 });
   } catch (error) {
+    console.log((error as Error).message);
     return NextResponse.json(
       { error: (error as Error).message },
       { status: 500 },

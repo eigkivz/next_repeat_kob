@@ -7,7 +7,9 @@ import * as z from "zod";
 
 export async function GET() {
   try {
-    const res = await prisma.roomType.findMany();
+    const res = await prisma.roomType.findMany({
+      orderBy: { createdAt: "asc" },
+    });
 
     return NextResponse.json(res);
   } catch (error) {
@@ -18,10 +20,7 @@ export async function GET() {
   }
 }
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(req: Request) {
   try {
     const schema = z.object({
       name: z.string(),

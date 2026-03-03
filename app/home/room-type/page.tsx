@@ -55,6 +55,7 @@ const RoomType = () => {
   const [price, setPrice] = useState<number>(0);
   const [remark, setRemark] = useState<string>("");
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [id, setId] = useState<string>("");
   const [roomType, setRoomType] = useState<RoomTypeInterface[]>();
 
   const hdlFetchData = async () => {
@@ -80,7 +81,11 @@ const RoomType = () => {
         remark,
       };
 
-      await axios.post("/api/room-type", payload);
+      if (id) {
+        await axios.put("/api/room-type/" + id, payload);
+      } else {
+        await axios.post("/api/room-type", payload);
+      }
 
       setIsOpen(false);
       hdlFetchData();
@@ -91,6 +96,33 @@ const RoomType = () => {
         text: "บันทึกประเภทห้องสำเร็จ",
         title: "สำเร็จ",
       });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        text: (error as Error).message,
+        title: "Error",
+      });
+    }
+  };
+
+  const hdlDelete = async (id: string) => {
+    try {
+      const confirmBtn = await Swal.fire({
+        icon: "question",
+        title: "คุณต้องการลบข้อมูลใช่หรือไม่ ?",
+        showConfirmButton: true,
+        showCancelButton: true,
+      });
+
+      if (confirmBtn.isConfirmed) {
+        const res = await axios.delete("/api/room-type/" + id);
+        Swal.fire({
+          icon: "success",
+          text: res.data?.message,
+          title: "ลบข้อมูลสำเร็จ",
+        });
+        hdlFetchData();
+      }
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -221,8 +253,32 @@ const RoomType = () => {
                     {item.price.toLocaleString("th-TH")}
                   </TableCell>
                   <TableCell className="flex flex-row gap-1 justify-center items-center">
-                    <Button variant="default" size="sm">แก้ไข</Button>
-                    <Button variant="destructive" size="sm">ลบ</Button>
+                    {item.status == "active" ? (
+                      <>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => {
+                            setId(item.id);
+                            setName(item.name);
+                            setPrice(item.price);
+                            setRemark(item.remark || "");
+                            setIsOpen(true);
+                          }}
+                        >
+                          แก้ไข
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => hdlDelete(item.id)}
+                        >
+                          ลบ
+                        </Button>
+                      </>
+                    ) : (
+                      <Button variant="secondary">เปิดใช้งาน</Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
