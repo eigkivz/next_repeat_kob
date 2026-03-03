@@ -132,6 +132,26 @@ const RoomType = () => {
     }
   };
 
+  const hdlOpen = async (id: string) => {
+    try {
+      const res = await axios.put("/api/room-type/open/" + id);
+
+      Swal.fire({
+        icon: "success",
+        title: "เปิดใช้งานสำเร็จ",
+        text: res.data?.meesage,
+      });
+
+      hdlFetchData();
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: (error as Error).message,
+      });
+    }
+  };
+
   const clearData = () => {
     setName("");
     setPrice(0);
@@ -277,7 +297,12 @@ const RoomType = () => {
                         </Button>
                       </>
                     ) : (
-                      <Button variant="secondary">เปิดใช้งาน</Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => hdlOpen(item.id)}
+                      >
+                        เปิดใช้งาน
+                      </Button>
                     )}
                   </TableCell>
                 </TableRow>
