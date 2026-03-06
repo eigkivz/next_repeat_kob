@@ -1,5 +1,4 @@
 import Link from "next/link";
-import React from "react";
 
 const Sidebar = () => {
   return (
@@ -15,6 +14,10 @@ const Sidebar = () => {
         <Link href="/home/room-type" className="space-x-3">
           <i className="fa-solid fa-couch"></i>
           <span>Room Type</span>
+        </Link>
+        <Link href="/home/room" className="space-x-3">
+        <i className="fa-solid fa-hotel"></i>
+        <span>Room</span>
         </Link>
       </div>
     </div>

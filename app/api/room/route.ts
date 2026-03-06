@@ -1,30 +1,26 @@
 import prisma from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { z } from "zod"
+
 
 export async function GET(
-    req: Request,
-    { params }: { params: Promise<{roomTypeId: string}>}
+    req: Request
 ) {
     try {
-        const { roomTypeId } = await params;
-        const rooms =await prisma.room.findMany({
+        const rooms = await prisma.room.findMany({
             orderBy: {
                 createdAt: "desc"
             },
             include: {
                 roomType: true
-            },
-            where: {
-                id: roomTypeId
             }
         });
 
-         return NextResponse.json(rooms);
+        return NextResponse.json(rooms);
     } catch (error) {
         return NextResponse.json(
-            { error: (error as Error).message},
-            { status: 500}
+            { error: (error as Error).message },
+            { status: 500 }
         )
     }
 }
@@ -75,13 +71,13 @@ export async function POST(req: Request) {
         }
 
         return NextResponse.json(
-            { message: "จำนวนห้องต้องมากกว่า 0"},
+            { message: "จำนวนห้องต้องมากกว่า 0" },
             { status: 400 }
         )
-        
+
     } catch (error) {
         return NextResponse.json(
-            { error: (error as Error).message},
+            { error: (error as Error).message },
             { status: 500 }
         )
     }
