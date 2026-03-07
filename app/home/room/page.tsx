@@ -8,16 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Combobox, ComboboxTrigger, ComboboxValue, ComboboxContent, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
-import { Plus, Home, Building } from "lucide-react";
+import { Plus, Home, Building, Trash2, CalendarCheck, Banknote, Users } from "lucide-react";
 import { RoomInterface } from "@/interface/RoomInterface";
 import RoomTypeInterface from "@/interface/RoomTypeInterface";
 
-// interface RoomFormData {
-//   roomType: string;
-//   buildingName: string;
-//   roomsPerFloor: string;
-//   floorCount: string;
-// }
 
 const Rooms = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -35,6 +29,7 @@ const Rooms = () => {
 
   useEffect(() => {
     hdlFetchRoomTypes();
+    hdlFetchRooms();
   }, []);
 
   useEffect(() => {
@@ -60,6 +55,21 @@ const Rooms = () => {
     }
   };
 
+  const hdlFetchRooms = async () => {
+    try {
+       const res = await axios.get("/api/room");
+       const rooms = (res.data) as RoomInterface[];
+       setRooms(rooms);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: (error as Error).message
+      });
+    }
+  }
+
+
   const handleInputChange = (field: keyof RoomInterface, value: string) => {
     if (field === "roomTypeId") {
       setRoomtypeId(value);
@@ -76,64 +86,75 @@ const Rooms = () => {
     }
   };
 
+  const handleDeleteRoom = async (roomId: string) => {
+    const result = await Swal.fire({
+      title: "ยืนยันการลบ?",
+      text: "คุณต้องการลบห้องพักนี้ใช่หรือไม่?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "ลบ",
+      cancelButtonText: "ยกเลิก"
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`/api/room/${roomId}`);
+        Swal.fire({
+          icon: "success",
+          title: "สำเร็จ",
+          text: "ลบห้องพักสำเร็จ"
+        });
+        hdlFetchRooms();
+      } catch (error) {
+        Swal.fire({
+          icon: "error",
+          title: "เกิดข้อผิดพลาด",
+          text: (error as Error).message
+        });
+      }
+    }
+  };
+
+  const handleBookRoom = (room: RoomInterface) => {
+    // TODO: Implement booking logic
+    Swal.fire({
+      icon: "info",
+      title: "จองห้องพัก",
+      text: `คุณต้องการจอง ${room.name} ใช่หรือไม่?`
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Validation
-    // if (!formData.roomType || !formData.buildingName || !formData.roomsPerFloor || !formData.floorCount) {
-    //   Swal.fire({
-    //     icon: "warning",
-    //     title: "กรุณากรอกข้อมูลให้ครบ",
-    //     text: "โปรดกรอกข้อมูลทุกช่องในฟอร์ม",
-    //   });
-    //   return;
-    // }
-
-    setIsSubmitting(true);
-
     try {
-      // Here you would send the data to your API
-      const res = await axios.post("/api/room", {
-        roomType: formData.roomType,
-        buildingName: formData.buildingName,
-        roomsPerFloor: parseInt(formData.roomsPerFloor),
-        floorCount: parseInt(formData.floorCount)
-      });
+      const payload = {
+        roomTypeId: roomTypeId,
+        towerName: towerName,
+        totalRoom: totalRoom,
+        totalLevel: totalLevel,
+        remark: remark
+      };
+
+      await axios.post("/api/room", payload);
 
       Swal.fire({
         icon: "success",
-        title: "เพิ่มห้องพักสำเร็จ",
-        text: "ข้อมูลห้องพักได้ถูกบันทึกเรียบร้อยแล้ว",
+        title: "สำเร็จ",
+        text: "เพิ่มข้อมูลห้องพักสำเร็จ"
       });
 
-      // Reset form
-      // setFormData({
-      //   roomType: "",
-      //   buildingName: "",
-      //   roomsPerFloor: "",
-      //   floorCount: ""
-      // });
-      setIsDialogOpen(false);
-
-      // Refresh data
-      hdlFetchRoomTypes();
     } catch (error) {
       Swal.fire({
         icon: "error",
-        title: "เกิดข้อผิดพลาด",
-        text: "ไม่สามารถเพิ่มห้องพักได้ กรุณาลองใหม่อีกครั้ง",
+        title: "Error",
+        text: (error as Error).message
       });
-    } finally {
-      setIsSubmitting(false);
     }
-  };
-  //   { value: "standard", label: "ห้องพักมาตรฐาน" },
-  //   { value: "deluxe", label: "ห้องพักดีลักซ์" },
-  //   { value: "suite", label: "ห้องสวีท" },
-  //   { value: "family", label: "ห้องพักครอบครัว" },
-  //   { value: "single", label: "ห้องพักเดี่ยว" },
-  //   { value: "double", label: "ห้องพักคู่" }
-  // ];
+  }
+
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -170,20 +191,13 @@ const Rooms = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="roomType">ประเภทห้องพัก *</Label>
-                    <Combobox items={roomTypes} itemToStringValue={(item: RoomTypeInterface) => item.name }>
-                      <ComboboxTrigger className="w-full h-10 px-3 py-2 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <ComboboxValue placeholder="เลือกประเภทห้องพัก" />
-                      </ComboboxTrigger>
-                      <ComboboxContent className="w-full z-50 bg-white border border-gray-200 rounded-md shadow-lg">
-                        <ComboboxList className="max-h-60 overflow-auto">
-                          {(roomTypes) => (
-                            <ComboboxItem key={roomTypes.name} value={roomTypes}>
-                              {roomTypes.name}
-                            </ComboboxItem>
-                          )}
-                        </ComboboxList>
-                      </ComboboxContent>
-                    </Combobox>
+                    <select className="input-modal" name="roomType" id="roomType" onChange={e => handleInputChange("roomTypeId", e.target.value)}>
+                      {
+                        roomTypes.map((item) => (
+                          <option key={item.id} value={item.id}>{item.name}</option>
+                        ))
+                      }
+                    </select>
                   </div>
 
                   <div className="space-y-2">
@@ -206,8 +220,8 @@ const Rooms = () => {
                         type="number"
                         min="1"
                         placeholder="เช่น 10"
-                        // value={formData.roomsPerFloor}
-                        // onChange={(e) => handleInputChange("roomsPerFloor", e.target.value)}
+                        value={totalRoom}
+                        onChange={(e) => handleInputChange("totalRoom", e.target.value)}
                         required
                       />
                     </div>
@@ -219,12 +233,17 @@ const Rooms = () => {
                         type="number"
                         min="1"
                         placeholder="เช่น 5"
-                        // value={formData.floorCount}
-                        // onChange={(e) => handleInputChange("floorCount", e.target.value)}
+                        value={totalLevel}
+                        onChange={(e) => handleInputChange("totalLevel", e.target.value)}
                         required
                       />
                     </div>
                   </div>
+
+                  <div className="space-y-2">
+                      <Label htmlFor="floorCount">รายละเอียดเพิ่มเติม</Label>
+                      <textarea style={{ resize: "none"}} className="input-modal" rows={20} value={remark} onChange={e => handleInputChange("remark", e.target.value)} placeholder="รายละเอียดเพิ่มเติม...."></textarea>
+                    </div>
 
                   <div className="flex justify-end space-x-3 pt-4">
                     <Button
@@ -249,14 +268,108 @@ const Rooms = () => {
           </div>
         </div>
 
-        {/* Content Area - You can add room listing here */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="text-center py-12">
-            <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">ยังไม่มีข้อมูลห้องพัก</h3>
-            <p className="text-gray-600 mb-4">คลิกปุ่ม "เพิ่มห้องพัก" เพื่อเริ่มเพิ่มข้อมูลห้องพักในระบบ</p>
+        {/* Content Area - Room Cards */}
+        {rooms.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {rooms.map((room) => (
+              <div key={room.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                {/* Card Header */}
+                <div className={ room.status === "active" 
+                  ? "bg-linear-to-r from-blue-500 to-blue-600 p-4" : "bg-linear-to-r from-red-500 to-red-600 p-4"}>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-white">{room.name}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      room.status === "active" ?
+                      room.statusEmpty === "empty" 
+                        ? "bg-green-100 text-green-700" 
+                        : "bg-red-100 text-red-700" :
+                        "bg-gray-400 text-gray-700"
+                    }}`}>
+                      {room.status === "active" ? 
+                      room.statusEmpty === "empty" ? "ว่าง" : "ไม่ว่าง" :
+                      "ปิดใช้งาน"}
+                    </span>
+                  </div>
+                  <p className="text-blue-100 text-sm mt-1">{room.towerName}</p>
+                </div>
+
+                {/* Card Body */}
+                <div className="p-4 space-y-3">
+                  {/* Price */}
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <Banknote className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">ราคา:</span>
+                    <span className="font-semibold text-blue-600">
+                      {room.roomType?.price?.toLocaleString() || "0"} บาท/เดือน
+                    </span>
+                  </div>
+
+                  {/* Room Type */}
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <Building className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">ประเภท:</span>
+                    <span className="font-medium">{room.roomType?.name || "-"}</span>
+                  </div>
+
+                  {/* Capacity Info */}
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <Users className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">จำนวนชั้น/ห้อง:</span>
+                    <span className="font-medium">{room.totalLevel} ชั้น / {room.totalRoom} ห้อง</span>
+                  </div>
+
+                  {/* Rental Fee Display */}
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">ค่าเช่ารายเดือน</span>
+                      <span className="text-lg font-bold text-green-600">
+                        {room.roomType?.price?.toLocaleString() || "0"} ฿
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Footer - Buttons */}
+                <div className="p-4 pt-0 flex gap-2">
+                  <Button
+                    onClick={() => handleBookRoom(room)}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                    disabled={room.status === "active" ? room.statusEmpty !== "empty" : true }
+                  >
+                    <CalendarCheck className="h-4 w-4 mr-2" />
+                    จองห้องพัก
+                  </Button>
+                  {
+                    room.status === "active" ? (
+                      <Button
+                    onClick={() => handleDeleteRoom(room.id)}
+                    variant="outline"
+                    className="px-3 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                    ) : (
+                      <Button
+                      onClick={() => ""}
+                      variant="outline"
+                      className="px-3 border-green-300 text-white bg-green-600 hover:bg-green-700 hover:text-white cursor-pointer"
+                      >ใช้งาน</Button>
+                    )
+                  }
+                  
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="text-center py-12">
+              <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">ยังไม่มีข้อมูลห้องพัก</h3>
+              <p className="text-gray-600 mb-4">คลิกปุ่ม "เพิ่มห้องพัก" เพื่อเริ่มเพิ่มข้อมูลห้องพักในระบบ</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
