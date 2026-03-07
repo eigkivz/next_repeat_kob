@@ -82,3 +82,34 @@ export async function POST(req: Request) {
         )
     }
 }
+
+export async function PUT(
+    req: Request
+) {
+    try {
+        const schema = z.object({
+            roomId: z.string(),
+        });
+        const body = await req.json();
+        const { roomId } = schema.parse(body);
+
+        await prisma.room.update({
+            where: {
+                id: roomId
+            },
+            data: {
+                status: "active"
+            }
+        });
+
+        return NextResponse.json(
+            { message: "เปิดใช้งานห้องสำเร็จ"},
+            { status: 200}
+        )
+    } catch (error) {
+        return NextResponse.json(
+            { error: (error as Error).message },
+            { status: 500 }
+        )
+    }
+}
