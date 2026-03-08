@@ -32,11 +32,29 @@ import {
 } from "lucide-react";
 import { RoomInterface } from "@/interface/RoomInterface";
 import RoomTypeInterface from "@/interface/RoomTypeInterface";
+import { BookingInterface } from "@/interface/BookingInterface";
 
 const Rooms = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // booking state
+  const [selectedRoomId, setSelectedRoomId] = useState("");
+  const [isOpenBookingDialog, setIsOpenBookingDialog] = useState(false);
+  const [bookingData, setBookingData] = useState<BookingInterface>({
+    customerName: "",
+    customerPhone: "",
+    customerAddress: "",
+    customerCardId: "",
+    customerGender: "",
+    deposit: 0,
+    remark: "",
+    roomId: "",
+    stayAt: new Date(),
+    stayUntil: new Date(),
+  });
+
+  // create room state
   const [rooms, setRooms] = useState<RoomInterface[]>([]);
   const [roomTypes, setRoomTypes] = useState<RoomTypeInterface[]>([]);
   const [roomTypeId, setRoomtypeId] = useState("");
@@ -136,13 +154,35 @@ const Rooms = () => {
   };
 
   const handleBookRoom = (room: RoomInterface) => {
-    // TODO: Implement booking logic
-    Swal.fire({
-      icon: "info",
-      title: "จองห้องพัก",
-      text: `คุณต้องการจอง ${room.name} ใช่หรือไม่?`,
-    });
+    setSelectedRoomId(room.id);
+    setBookingData(prev => ({
+      ...prev,
+      roomId: room.id,
+      stayAt: new Date(),
+      stayUntil: new Date(),
+    }));
+    setIsOpenBookingDialog(true);
   };
+
+  const submitBooking = async () => {
+    try {
+      await axios.post("/api/booking", bookingData);
+      Swal.fire({
+        icon: "success",
+        title: "สำเร็จ",
+        text: "จองห้องพักสำเร็จ",
+      });
+
+      setIsOpenBookingDialog(false);
+      hdlFetchRooms();
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: (error as Error).message,
+      });
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -215,6 +255,10 @@ const Rooms = () => {
     setTotalLevel(0);
     setRemark("");
   };
+
+  // const clearBookingForm = () => {
+  //   setBookingData()
+  // };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -486,6 +530,179 @@ const Rooms = () => {
             </div>
           </div>
         )}
+
+        {/* Booking Modal */}
+        <Dialog open={isOpenBookingDialog} onOpenChange={setIsOpenBookingDialog}>
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <CalendarCheck className="h-5 w-5 text-blue-600" />
+                <span>จองห้องพัก</span>
+              </DialogTitle>
+            </DialogHeader>
+
+            <form className="space-y-6">
+              {/* ข้อมูลผู้เข้าพัก */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                  ข้อมูลผู้เข้าพัก
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="customerName">ชื่อผู้เข้าพัก *</Label>
+                    <Input
+                      id="customerName"
+                      type="text"
+                      placeholder="กรอกชื่อ-นามสกุล"
+                      value={bookingData.customerName}
+                      onChange={(e) =>
+                        setBookingData({ ...bookingData, customerName: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="customerPhone">เบอร์โทรศัพท์ *</Label>
+                    <Input
+                      id="customerPhone"
+                      type="tel"
+                      placeholder="กรอกเบอร์โทรศัพท์"
+                      value={bookingData.customerPhone}
+                      onChange={(e) =>
+                        setBookingData({ ...bookingData, customerPhone: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="customerCardId">เลขบัตรประชาชน *</Label>
+                    <Input
+                      id="customerCardId"
+                      type="text"
+                      placeholder="กรอกเลขบัตรประชาชน 13 หลัก"
+                      value={bookingData.customerCardId}
+                      onChange={(e) =>
+                        setBookingData({ ...bookingData, customerCardId: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="customerGender">เพศ *</Label>
+                    <select
+                      id="customerGender"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      value={bookingData.customerGender}
+                      onChange={(e) =>
+                        setBookingData({ ...bookingData, customerGender: e.target.value })
+                      }
+                      required
+                    >
+                      <option value="">เลือกเพศ</option>
+                      <option value="male">ชาย</option>
+                      <option value="female">หญิง</option>
+                      <option value="other">อื่นๆ</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="customerAddress">ที่อยู่ *</Label>
+                  <textarea
+                    id="customerAddress"
+                    className="flex min-h-15 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                    placeholder="กรอกที่อยู่ปัจจุบัน"
+                    value={bookingData.customerAddress}
+                    onChange={(e) =>
+                      setBookingData({ ...bookingData, customerAddress: e.target.value })
+                    }
+                    rows={3}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* ข้อมูลการจอง */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                  ข้อมูลการจอง
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="stayAt">วันที่เข้าพัก *</Label>
+                    <Input
+                      id="stayAt"
+                      type="date"
+                      value={bookingData.stayAt instanceof Date ? bookingData.stayAt.toISOString().split('T')[0] : ''}
+                      onChange={(e) => setBookingData({ ...bookingData, stayAt: new Date(e.target.value) })}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="stayUntil">วันที่ออก *</Label>
+                    <Input
+                      id="stayUntil"
+                      type="date"
+                      value={bookingData.stayUntil instanceof Date ? bookingData.stayUntil.toISOString().split('T')[0] : ''}
+                      onChange={(e) => setBookingData({ ...bookingData, stayUntil: new Date(e.target.value) })}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="deposit">จำนวนเงินมัดจำ (บาท) *</Label>
+                    <Input
+                      id="deposit"
+                      type="number"
+                      min="0"
+                      placeholder="กรอกจำนวนเงินมัดจำ"
+                      value={bookingData.deposit}
+                      onChange={(e) => setBookingData({ ...bookingData, deposit: parseInt(e.target.value) || 0 })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="remark">ข้อมูลเพิ่มเติม</Label>
+                  <textarea
+                    id="remark"
+                    className="flex min-h-20 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                    placeholder="กรอกข้อมูลเพิ่มเติม (ถ้ามี)"
+                    value={bookingData.remark}
+                    onChange={(e) => setBookingData({ ...bookingData, remark: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              {/* ปุ่ม Action */}
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsOpenBookingDialog(false)}
+                  disabled={isSubmitting}
+                >
+                  ยกเลิก
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "กำลังบันทึก..." : "ยืนยันการจอง"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

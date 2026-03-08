@@ -31,16 +31,35 @@ model RoomType {
 }
 
 model Room {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   towerName   String
   totalLevel  Int
   totalRoom   Int
   roomTypeId  String
   remark      String?
-  status      String   @default("active")
-  statusEmpty String   @default("empty")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  roomType    RoomType @relation(fields: [roomTypeId], references: [id])
+  status      String    @default("active")
+  statusEmpty String    @default("empty") // empty, notempty
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  roomType    RoomType  @relation(fields: [roomTypeId], references: [id])
+  bookings    Booking[]
+}
+
+model Booking {
+  id              String    @id @default(cuid())
+  customerName    String
+  customerPhone   String
+  customerAddress String
+  customerCardId  String
+  customerGender  String
+  status          String    @default("active") // active, inactive
+  stayAt          DateTime
+  stayUntil       DateTime?
+  deposit         Int       @default(0) // มัดจำ
+  remark          String?
+  roomId          String
+  room            Room      @relation(fields: [roomId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
