@@ -29,6 +29,7 @@ import {
   CalendarCheck,
   Banknote,
   Users,
+  Eye,
 } from "lucide-react";
 import { RoomInterface } from "@/interface/RoomInterface";
 import RoomTypeInterface from "@/interface/RoomTypeInterface";
@@ -37,6 +38,10 @@ import { BookingInterface } from "@/interface/BookingInterface";
 const Rooms = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasStayUntil, setHasStayUntil] = useState(false);
+  const [isOpenViewDialog, setIsOpenViewDialog] = useState(false);
+  const [selectedRoomForView, setSelectedRoomForView] =
+    useState<RoomInterface | null>(null);
 
   // booking state
   const [selectedRoomId, setSelectedRoomId] = useState("");
@@ -51,7 +56,7 @@ const Rooms = () => {
     remark: "",
     roomId: "",
     stayAt: new Date(),
-    stayUntil: new Date(),
+    stayUntil: undefined,
   });
 
   // create room state
@@ -155,17 +160,47 @@ const Rooms = () => {
 
   const handleBookRoom = (room: RoomInterface) => {
     setSelectedRoomId(room.id);
-    setBookingData(prev => ({
+    setHasStayUntil(false);
+    setBookingData((prev) => ({
       ...prev,
       roomId: room.id,
       stayAt: new Date(),
-      stayUntil: new Date(),
+      stayUntil: undefined,
     }));
     setIsOpenBookingDialog(true);
   };
 
-  const submitBooking = async () => {
+  const handleViewGuest = (room: RoomInterface) => {
+    setSelectedRoomForView(room);
+    setIsOpenViewDialog(true);
+    // TODO: fetch booking data from API
+    if (!room) {
+      return Swal.fire({
+        icon: "warning",
+        text: "ไม่พบผู้เข้าพักในระบบ",
+        title: "ไม่พบผุ้เข้าพักในระบบ ที่เลือก",
+      });
+    }
+
+    const guest = room.bookings[0];
+    setBookingData({
+      customerName: guest.customerName,
+      customerPhone: guest.customerPhone,
+      customerAddress: guest.customerAddress,
+      customerCardId: guest.customerCardId,
+      customerGender: guest.customerGender,
+      deposit: guest.deposit,
+      stayAt: guest.stayAt,
+      stayUntil: guest.stayUntil,
+      remark: guest.remark,
+      roomId: guest.roomId,
+    });
+  };
+
+  const submitBooking = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     try {
+      console.log(bookingData);
       await axios.post("/api/booking", bookingData);
       Swal.fire({
         icon: "success",
@@ -175,6 +210,7 @@ const Rooms = () => {
 
       setIsOpenBookingDialog(false);
       hdlFetchRooms();
+      clearBookingForm();
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -182,7 +218,7 @@ const Rooms = () => {
         text: (error as Error).message,
       });
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -256,9 +292,20 @@ const Rooms = () => {
     setRemark("");
   };
 
-  // const clearBookingForm = () => {
-  //   setBookingData()
-  // };
+  const clearBookingForm = () => {
+    setBookingData({
+      customerAddress: "",
+      customerCardId: "",
+      customerGender: "",
+      customerName: "",
+      customerPhone: "",
+      deposit: 0,
+      roomId: "",
+      stayAt: new Date(),
+      stayUntil: undefined,
+    });
+    setHasStayUntil(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -483,7 +530,18 @@ const Rooms = () => {
                 </div>
 
                 {/* Card Footer - Buttons */}
-                <div className="p-4 pt-0 flex gap-2">
+                <div className="p-4 pt-0 flex gap-2 flex-wrap">
+                  {room.status === "active" &&
+                    room.statusEmpty === "notempty" && (
+                      <Button
+                        onClick={() => handleViewGuest(room)}
+                        variant="outline"
+                        className="flex-1 border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        ดูข้อมูลผู้เข้าพัก
+                      </Button>
+                    )}
                   <Button
                     onClick={() => handleBookRoom(room)}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
@@ -531,8 +589,128 @@ const Rooms = () => {
           </div>
         )}
 
+        {/* View Guest Dialog */}
+        <Dialog open={isOpenViewDialog} onOpenChange={setIsOpenViewDialog}>
+          <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <Eye className="h-5 w-5 text-blue-600" />
+                <span>ข้อมูลผู้เข้าพัก - {selectedRoomForView?.name}</span>
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {/* ส่วนข้อมูลผู้เข้าพัก */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    ข้อมูลผู้เข้าพัก
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-xs text-gray-500">ชื่อ-นามสกุล</span>
+                    <p className="font-medium text-gray-900">
+                      {bookingData.customerName || "-"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs text-gray-500">เบอร์โทรศัพท์</span>
+                    <p className="font-medium text-gray-900">
+                      {bookingData.customerPhone || "-"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs text-gray-500">เลขบัตรประชาชน</span>
+                    <p className="font-medium text-gray-900">
+                      {bookingData.customerCardId || "-"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs text-gray-500">เพศ</span>
+                    <p className="font-medium text-gray-900">
+                      {bookingData.customerGender === "male"
+                        ? "ชาย"
+                        : bookingData.customerGender === "female"
+                        ? "หญิง"
+                        : bookingData.customerGender === "other"
+                        ? "อื่นๆ"
+                        : "-"}
+                    </p>
+                  </div>
+                  <div className="md:col-span-2 space-y-1">
+                    <span className="text-xs text-gray-500">ที่อยู่</span>
+                    <p className="font-medium text-gray-900">
+                      {bookingData.customerAddress || "-"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ส่วนข้อมูลการจอง */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                  <CalendarCheck className="h-5 w-5 text-green-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    ข้อมูลการจอง
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <span className="text-xs text-gray-500">วันที่เข้าพัก</span>
+                    <p className="font-medium text-gray-900">
+                      {bookingData.stayAt
+                        ? new Date(bookingData.stayAt).toLocaleDateString("th-TH")
+                        : "-"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs text-gray-500">วันที่ออก</span>
+                    <p className="font-medium text-gray-900">
+                      {bookingData.stayUntil
+                        ? new Date(bookingData.stayUntil).toLocaleDateString("th-TH")
+                        : "ไม่ระบุ"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-xs text-gray-500">เงินมัดจำ</span>
+                    <p className="font-medium text-green-600">
+                      {bookingData.deposit?.toLocaleString() || "0"} บาท
+                    </p>
+                  </div>
+                </div>
+
+                {bookingData.remark && (
+                  <div className="space-y-1 mt-4">
+                    <span className="text-xs text-gray-500">หมายเหตุ</span>
+                    <p className="font-medium text-gray-900 bg-gray-50 p-3 rounded-md">
+                      {bookingData.remark}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4 border-t mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOpenViewDialog(false)}
+              >
+                ปิด
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Booking Modal */}
-        <Dialog open={isOpenBookingDialog} onOpenChange={setIsOpenBookingDialog}>
+        <Dialog
+          open={isOpenBookingDialog}
+          onOpenChange={setIsOpenBookingDialog}
+        >
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center space-x-2">
@@ -541,7 +719,7 @@ const Rooms = () => {
               </DialogTitle>
             </DialogHeader>
 
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={submitBooking}>
               {/* ข้อมูลผู้เข้าพัก */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
@@ -557,7 +735,10 @@ const Rooms = () => {
                       placeholder="กรอกชื่อ-นามสกุล"
                       value={bookingData.customerName}
                       onChange={(e) =>
-                        setBookingData({ ...bookingData, customerName: e.target.value })
+                        setBookingData({
+                          ...bookingData,
+                          customerName: e.target.value,
+                        })
                       }
                       required
                     />
@@ -571,7 +752,10 @@ const Rooms = () => {
                       placeholder="กรอกเบอร์โทรศัพท์"
                       value={bookingData.customerPhone}
                       onChange={(e) =>
-                        setBookingData({ ...bookingData, customerPhone: e.target.value })
+                        setBookingData({
+                          ...bookingData,
+                          customerPhone: e.target.value,
+                        })
                       }
                       required
                     />
@@ -585,7 +769,10 @@ const Rooms = () => {
                       placeholder="กรอกเลขบัตรประชาชน 13 หลัก"
                       value={bookingData.customerCardId}
                       onChange={(e) =>
-                        setBookingData({ ...bookingData, customerCardId: e.target.value })
+                        setBookingData({
+                          ...bookingData,
+                          customerCardId: e.target.value,
+                        })
                       }
                       required
                     />
@@ -598,7 +785,10 @@ const Rooms = () => {
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                       value={bookingData.customerGender}
                       onChange={(e) =>
-                        setBookingData({ ...bookingData, customerGender: e.target.value })
+                        setBookingData({
+                          ...bookingData,
+                          customerGender: e.target.value,
+                        })
                       }
                       required
                     >
@@ -618,7 +808,10 @@ const Rooms = () => {
                     placeholder="กรอกที่อยู่ปัจจุบัน"
                     value={bookingData.customerAddress}
                     onChange={(e) =>
-                      setBookingData({ ...bookingData, customerAddress: e.target.value })
+                      setBookingData({
+                        ...bookingData,
+                        customerAddress: e.target.value,
+                      })
                     }
                     rows={3}
                     required
@@ -638,21 +831,63 @@ const Rooms = () => {
                     <Input
                       id="stayAt"
                       type="date"
-                      value={bookingData.stayAt instanceof Date ? bookingData.stayAt.toISOString().split('T')[0] : ''}
-                      onChange={(e) => setBookingData({ ...bookingData, stayAt: new Date(e.target.value) })}
+                      value={
+                        bookingData.stayAt instanceof Date
+                          ? bookingData.stayAt.toISOString().split("T")[0]
+                          : ""
+                      }
+                      onChange={(e) =>
+                        setBookingData({
+                          ...bookingData,
+                          stayAt: new Date(e.target.value),
+                        })
+                      }
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="stayUntil">วันที่ออก *</Label>
-                    <Input
-                      id="stayUntil"
-                      type="date"
-                      value={bookingData.stayUntil instanceof Date ? bookingData.stayUntil.toISOString().split('T')[0] : ''}
-                      onChange={(e) => setBookingData({ ...bookingData, stayUntil: new Date(e.target.value) })}
-                      required
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="hasStayUntil"
+                        checked={hasStayUntil}
+                        onChange={(e) => {
+                          setHasStayUntil(e.target.checked);
+                          if (!e.target.checked) {
+                            setBookingData({
+                              ...bookingData,
+                              stayUntil: undefined,
+                            });
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <Label
+                        htmlFor="hasStayUntil"
+                        className="cursor-pointer text-sm"
+                      >
+                        ระบุวันที่ออก (ถ้าทราบ)
+                      </Label>
+                    </div>
+                    {hasStayUntil && (
+                      <Input
+                        id="stayUntil"
+                        type="date"
+                        value={
+                          bookingData.stayUntil instanceof Date
+                            ? bookingData.stayUntil.toISOString().split("T")[0]
+                            : ""
+                        }
+                        onChange={(e) =>
+                          setBookingData({
+                            ...bookingData,
+                            stayUntil: new Date(e.target.value),
+                          })
+                        }
+                        required={hasStayUntil}
+                      />
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -663,7 +898,12 @@ const Rooms = () => {
                       min="0"
                       placeholder="กรอกจำนวนเงินมัดจำ"
                       value={bookingData.deposit}
-                      onChange={(e) => setBookingData({ ...bookingData, deposit: parseInt(e.target.value) || 0 })}
+                      onChange={(e) =>
+                        setBookingData({
+                          ...bookingData,
+                          deposit: parseInt(e.target.value) || 0,
+                        })
+                      }
                       required
                     />
                   </div>
@@ -676,7 +916,9 @@ const Rooms = () => {
                     className="flex min-h-20 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                     placeholder="กรอกข้อมูลเพิ่มเติม (ถ้ามี)"
                     value={bookingData.remark}
-                    onChange={(e) => setBookingData({ ...bookingData, remark: e.target.value })}
+                    onChange={(e) =>
+                      setBookingData({ ...bookingData, remark: e.target.value })
+                    }
                     rows={3}
                   />
                 </div>

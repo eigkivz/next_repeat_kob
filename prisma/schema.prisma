@@ -39,11 +39,11 @@ model Room {
   roomTypeId  String
   remark      String?
   status      String    @default("active")
-  statusEmpty String    @default("empty") // empty, notempty
+  statusEmpty String    @default("empty")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  roomType    RoomType  @relation(fields: [roomTypeId], references: [id])
   bookings    Booking[]
+  roomType    RoomType  @relation(fields: [roomTypeId], references: [id])
 }
 
 model Booking {
@@ -53,13 +53,13 @@ model Booking {
   customerAddress String
   customerCardId  String
   customerGender  String
-  status          String    @default("active") // active, inactive
+  status          String    @default("active")
   stayAt          DateTime
   stayUntil       DateTime?
-  deposit         Int       @default(0) // มัดจำ
+  deposit         Int       @default(0)
   remark          String?
   roomId          String
-  room            Room      @relation(fields: [roomId], references: [id])
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  room            Room      @relation(fields: [roomId], references: [id])
 }

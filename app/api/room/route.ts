@@ -12,7 +12,8 @@ export async function GET(
                 createdAt: "desc"
             },
             include: {
-                roomType: true
+                roomType: true,
+                bookings: true
             }
         });
 

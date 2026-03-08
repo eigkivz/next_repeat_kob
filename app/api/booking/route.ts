@@ -1,7 +1,7 @@
 // POST /api/booking
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
@@ -15,9 +15,9 @@ export async function POST(req: Request) {
       deposit: z.number().default(0),
       remark: z.string().optional(),
       roomId: z.string(),
-      status: z.string(),
-      stayAt: z.date(),
-      stayUntil: z.date().optional(),
+      status: z.string().optional(),
+      stayAt: z.coerce.date(),
+      stayUntil: z.coerce.date().optional(),
     });
 
     const {
@@ -36,28 +36,30 @@ export async function POST(req: Request) {
 
     // create booking
     await prisma.booking.create({
-      customerName: customerName,
-      customerPhone: customerPhone,
-      customerAddress: customerAddress,
-      customerCardId: customerCardId,
-      customerGender: customerGender,
-      deposit: deposit,
-      remark: remark,
-      roomId: roomId,
-      status: "active",
-      stayAt: stayAt,
-      stayUntil: stayUntil,
+      data: {
+        customerName: customerName,
+        customerPhone: customerPhone,
+        customerAddress: customerAddress,
+        customerCardId: customerCardId,
+        customerGender: customerGender,
+        deposit: deposit,
+        remark: remark,
+        roomId: roomId,
+        stayAt: stayAt,
+        stayUntil: stayUntil,
+      },
     });
 
     // update room status to not empty
     await prisma.room.update({
-        where: { roomId: roomId },
-        data: { statusEmpty: "notempty"}
+      where: { id: roomId },
+      data: { statusEmpty: "notempty" },
     });
-    
+
     return NextResponse.json({ message: "จองห้องพักสำเร็จ" }, { status: 200 });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.log(error.issues)
       return NextResponse.json({ error: error.issues }, { status: 400 });
     }
     return NextResponse.json(
