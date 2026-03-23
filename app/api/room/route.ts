@@ -9,7 +9,7 @@ export async function GET(
     try {
         const rooms = await prisma.room.findMany({
             orderBy: {
-                createdAt: "desc"
+                name: "asc"
             },
             include: {
                 roomType: true,
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
         });
 
         const { towerName, totalLevel, totalRoom, roomTypeId, remark } = schema.parse(body);
-
+    
         if (totalRoom > 0) {
 
             const computeTotalRoom = totalRoom * totalLevel;
@@ -77,6 +77,7 @@ export async function POST(req: Request) {
         )
 
     } catch (error) {
+        console.log(error)
         return NextResponse.json(
             { error: (error as Error).message },
             { status: 500 }

@@ -83,6 +83,22 @@ const Rooms = () => {
     }
   }, [roomTypes]);
 
+
+  const hdlFetchFilterRoom = async () => {
+    try {
+      const res = await axios.get(`/api/room/${filterRoomTypeId}`);
+      const roomFilterData = (res.data) as RoomInterface[];
+      console.log(roomFilterData)
+      setRooms(roomFilterData);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: (error as Error).message
+      });
+    }
+  }
+
   const hdlFetchRoomTypes = async () => {
     try {
       const res = await axios.get("/api/room-type");
@@ -200,7 +216,6 @@ const Rooms = () => {
   const submitBooking = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      console.log(bookingData);
       await axios.post("/api/booking", bookingData);
       Swal.fire({
         icon: "success",
@@ -353,8 +368,10 @@ const Rooms = () => {
                       className="input-modal"
                       name="roomType"
                       id="roomType"
-                      onChange={(e) =>
+                      onChange={(e) => {
                         handleInputChange("roomTypeId", e.target.value)
+                      }
+                        
                       }
                     >
                       {roomTypes.map((item) => (
@@ -446,6 +463,25 @@ const Rooms = () => {
               </DialogContent>
             </Dialog>
           </div>
+        </div>
+
+        {/* Filter room by room type */}
+        <div>
+          <span>ประเภทห้องพัก</span>
+          <select
+           value={filterRoomTypeId}
+           onChange={(e) => {
+              setFilterRoomtypeId(e.target.value);
+              hdlFetchFilterRoom();
+           }}
+           name="filterRoom" 
+           id="filterRoom">
+            {roomTypes.map((roomType, index) => (
+              <option key={index} value={roomType.id}>
+                {roomType.name}
+              </option>
+            ))}
+           </select>
         </div>
 
         {/* Content Area - Room Cards */}

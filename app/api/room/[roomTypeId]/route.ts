@@ -8,7 +8,7 @@ export async function GET(
 ) {
     try {
         const { roomTypeId } = await params;
-        const rooms =await prisma.room.findMany({
+        const rooms = await prisma.room.findMany({
             orderBy: {
                 createdAt: "desc"
             },
@@ -16,10 +16,11 @@ export async function GET(
                 roomType: true
             },
             where: {
-                id: roomTypeId
+                roomTypeId: roomTypeId
             }
         });
-
+        console.log(roomTypeId)
+        console.log(rooms)
          return NextResponse.json(rooms);
     } catch (error) {
         return NextResponse.json(
