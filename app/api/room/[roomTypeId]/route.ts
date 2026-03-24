@@ -19,8 +19,7 @@ export async function GET(
                 roomTypeId: roomTypeId
             }
         });
-        console.log(roomTypeId)
-        console.log(rooms)
+
          return NextResponse.json(rooms);
     } catch (error) {
         return NextResponse.json(

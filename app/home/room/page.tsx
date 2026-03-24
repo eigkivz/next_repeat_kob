@@ -79,16 +79,19 @@ const Rooms = () => {
     if (roomTypes.length > 0) {
       // ตั้งค่าค่าเริ่มต้นเป็นค่าแรกสุดของ roomTypes
       setRoomtypeId(roomTypes[0].id);
-      setFilterRoomtypeId(roomTypes[0].id);
+      // setFilterRoomtypeId(roomTypes[0].id);
     }
   }, [roomTypes]);
+
+  useEffect(() => {
+    hdlFetchFilterRoom()
+  }, [filterRoomTypeId])
 
 
   const hdlFetchFilterRoom = async () => {
     try {
       const res = await axios.get(`/api/room/${filterRoomTypeId}`);
       const roomFilterData = (res.data) as RoomInterface[];
-      console.log(roomFilterData)
       setRooms(roomFilterData);
     } catch (error) {
       Swal.fire({
@@ -362,24 +365,47 @@ const Rooms = () => {
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Room Type Cards */}
                   <div className="space-y-2">
-                    <Label htmlFor="roomType">ประเภทห้องพัก *</Label>
-                    <select
-                      className="input-modal"
-                      name="roomType"
-                      id="roomType"
-                      onChange={(e) => {
-                        handleInputChange("roomTypeId", e.target.value)
-                      }
-                        
-                      }
-                    >
-                      {roomTypes.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      ))}
-                    </select>
+                    <Label>ประเภทห้องพัก *</Label>
+                    <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto">
+                      {roomTypes.map((item) => {
+                        const isSelected = roomTypeId === item.id;
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={() => handleInputChange("roomTypeId", item.id)}
+                            className={`border-2 rounded-lg p-3 cursor-pointer transition-all ${
+                              isSelected
+                                ? "border-blue-600 bg-blue-50 ring-1 ring-blue-600"
+                                : "border-gray-200 hover:border-blue-300 hover:shadow-sm"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <Building className={`h-5 w-5 ${isSelected ? "text-blue-600" : "text-gray-400"}`} />
+                              {isSelected && (
+                                <div className="w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
+                                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-2">
+                              <p className="font-medium text-sm text-gray-900">{item.name}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {item.price?.toLocaleString() || "0"} บาท/เดือน
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {roomTypes.length === 0 && (
+                      <p className="text-sm text-gray-500 text-center py-4 bg-gray-50 rounded-lg">
+                        ยังไม่มีประเภทห้องพัก
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -465,23 +491,38 @@ const Rooms = () => {
           </div>
         </div>
 
-        {/* Filter room by room type */}
-        <div>
-          <span>ประเภทห้องพัก</span>
-          <select
-           value={filterRoomTypeId}
-           onChange={(e) => {
-              setFilterRoomtypeId(e.target.value);
-              hdlFetchFilterRoom();
-           }}
-           name="filterRoom" 
-           id="filterRoom">
-            {roomTypes.map((roomType, index) => (
-              <option key={index} value={roomType.id}>
+        {/* Filter room by room type - Tab Pills */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-gray-700">ประเภทห้องพัก:</span>
+            <button
+              onClick={() => {
+                setFilterRoomtypeId("");
+              }}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                filterRoomTypeId === ""
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              ทั้งหมด
+            </button>
+            {roomTypes.map((roomType) => (
+              <button
+                key={roomType.id}
+                onClick={() => {
+                  setFilterRoomtypeId(roomType.id);
+                }}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  filterRoomTypeId === roomType.id
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                }`}
+              >
                 {roomType.name}
-              </option>
+              </button>
             ))}
-           </select>
+          </div>
         </div>
 
         {/* Content Area - Room Cards */}
