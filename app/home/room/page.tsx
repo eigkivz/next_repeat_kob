@@ -69,6 +69,10 @@ const Rooms = () => {
   const [towerName, setTowerName] = useState("");
   const [remark, setRemark] = useState("");
 
+  // create water and electric log
+  const [waterUnit, setwaterUnit] = useState(0);
+  const [electricityUnit, setElectricityUnit] = useState(0);
+
   useEffect(() => {
     hdlFetchRoomTypes();
     hdlFetchRooms();
@@ -219,7 +223,8 @@ const Rooms = () => {
   const submitBooking = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      await axios.post("/api/booking", bookingData);
+      await axios.post("/api/booking", { ...bookingData, 
+        waterUnit: waterUnit, electricityUnit: electricityUnit});
       Swal.fire({
         icon: "success",
         title: "สำเร็จ",
@@ -982,6 +987,27 @@ const Rooms = () => {
                         })
                       }
                       required
+                    />
+                  </div>
+
+                  {/* หน่วยน้ำและหน่วยไฟ */}
+                  <div className="space-y-2">
+                    <Label htmlFor="waterUnit">หน่วยน้ำ (หน่วย)</Label>
+                    <Input
+                      id="waterUnit"
+                      type="number"
+                      min="0"
+                      placeholder="กรอกหน่วยน้ำเริ่มต้น"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="electricityUnit">หน่วยไฟ (หน่วย)</Label>
+                    <Input
+                      id="electricityUnit"
+                      type="number"
+                      min="0"
+                      placeholder="กรอกหน่วยไฟเริ่มต้น"
                     />
                   </div>
                 </div>
