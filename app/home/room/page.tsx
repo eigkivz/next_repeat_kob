@@ -30,6 +30,9 @@ import {
   Banknote,
   Users,
   Eye,
+  Droplets,
+  Zap,
+  Pencil,
 } from "lucide-react";
 import { RoomInterface } from "@/interface/RoomInterface";
 import RoomTypeInterface from "@/interface/RoomTypeInterface";
@@ -40,6 +43,7 @@ const Rooms = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasStayUntil, setHasStayUntil] = useState(false);
   const [isOpenViewDialog, setIsOpenViewDialog] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [selectedRoomForView, setSelectedRoomForView] =
     useState<RoomInterface | null>(null);
 
@@ -57,6 +61,8 @@ const Rooms = () => {
     roomId: "",
     stayAt: new Date(),
     stayUntil: undefined,
+    waterLog: [],
+    electricLogs: []
   });
 
   // create room state
@@ -72,6 +78,10 @@ const Rooms = () => {
   // create water and electric log
   const [waterUnit, setwaterUnit] = useState(0);
   const [electricityUnit, setElectricityUnit] = useState(0);
+
+  // edit water and electric unit state
+  const [editWaterUnit, setEditWaterUnit] = useState(0);
+  const [editElectricityUnit, setEditElectricityUnit] = useState(0);
 
   useEffect(() => {
     hdlFetchRoomTypes();
@@ -196,6 +206,7 @@ const Rooms = () => {
   const handleViewGuest = (room: RoomInterface) => {
     setSelectedRoomForView(room);
     setIsOpenViewDialog(true);
+    setIsEditMode(false); // Reset edit mode when opening dialog
     // TODO: fetch booking data from API
     if (!room) {
       return Swal.fire({
@@ -206,6 +217,7 @@ const Rooms = () => {
     }
 
     const guest = room.bookings[0];
+  
     setBookingData({
       customerName: guest.customerName,
       customerPhone: guest.customerPhone,
@@ -217,7 +229,46 @@ const Rooms = () => {
       stayUntil: guest.stayUntil,
       remark: guest.remark,
       roomId: guest.roomId,
+      waterLog: guest.waterLog,
+      electricityLogs: guest.electricityLogs
     });
+
+    // Initialize edit water and electricity units from the latest log or default to 0
+    const latestWaterLog = guest.waterLog?.[guest.waterLog.length - 1];
+    const latestElectricLog = guest.electricityLogs?.[guest.electricityLogs.length - 1];
+    setEditWaterUnit(latestWaterLog?.waterUnit || 0);
+    setEditElectricityUnit(latestElectricLog?.electricityUnit || 0);
+  };
+
+  const toggleEditMode = () => {
+    setIsEditMode(!isEditMode);
+  };
+
+  const handleUpdateBooking = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await axios.post("/api/booking", { 
+        ...bookingData, 
+        waterUnit: editWaterUnit, 
+        electricityUnit: editElectricityUnit 
+      });
+      Swal.fire({
+        icon: "success",
+        title: "สำเร็จ",
+        text: "แก้ไขข้อมูลสำเร็จ",
+      });
+      setIsEditMode(false);
+      hdlFetchRooms();
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: (error as Error).message,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const submitBooking = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -326,6 +377,8 @@ const Rooms = () => {
       roomId: "",
       stayAt: new Date(),
       stayUntil: undefined,
+      waterLog: [],
+      electricLogs: []
     });
     setHasStayUntil(false);
   };
@@ -675,116 +728,302 @@ const Rooms = () => {
         <Dialog open={isOpenViewDialog} onOpenChange={setIsOpenViewDialog}>
           <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center space-x-2">
-                <Eye className="h-5 w-5 text-blue-600" />
-                <span>ข้อมูลผู้เข้าพัก - {selectedRoomForView?.name}</span>
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-6">
-              {/* ส่วนข้อมูลผู้เข้าพัก */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-                  <Users className="h-5 w-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    ข้อมูลผู้เข้าพัก
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <span className="text-xs text-gray-500">ชื่อ-นามสกุล</span>
-                    <p className="font-medium text-gray-900">
-                      {bookingData.customerName || "-"}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs text-gray-500">เบอร์โทรศัพท์</span>
-                    <p className="font-medium text-gray-900">
-                      {bookingData.customerPhone || "-"}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs text-gray-500">เลขบัตรประชาชน</span>
-                    <p className="font-medium text-gray-900">
-                      {bookingData.customerCardId || "-"}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs text-gray-500">เพศ</span>
-                    <p className="font-medium text-gray-900">
-                      {bookingData.customerGender === "male"
-                        ? "ชาย"
-                        : bookingData.customerGender === "female"
-                        ? "หญิง"
-                        : bookingData.customerGender === "other"
-                        ? "อื่นๆ"
-                        : "-"}
-                    </p>
-                  </div>
-                  <div className="md:col-span-2 space-y-1">
-                    <span className="text-xs text-gray-500">ที่อยู่</span>
-                    <p className="font-medium text-gray-900">
-                      {bookingData.customerAddress || "-"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* ส่วนข้อมูลการจอง */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-                  <CalendarCheck className="h-5 w-5 text-green-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    ข้อมูลการจอง
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <span className="text-xs text-gray-500">วันที่เข้าพัก</span>
-                    <p className="font-medium text-gray-900">
-                      {bookingData.stayAt
-                        ? new Date(bookingData.stayAt).toLocaleDateString("th-TH")
-                        : "-"}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs text-gray-500">วันที่ออก</span>
-                    <p className="font-medium text-gray-900">
-                      {bookingData.stayUntil
-                        ? new Date(bookingData.stayUntil).toLocaleDateString("th-TH")
-                        : "ไม่ระบุ"}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <span className="text-xs text-gray-500">เงินมัดจำ</span>
-                    <p className="font-medium text-green-600">
-                      {bookingData.deposit?.toLocaleString() || "0"} บาท
-                    </p>
-                  </div>
-                </div>
-
-                {bookingData.remark && (
-                  <div className="space-y-1 mt-4">
-                    <span className="text-xs text-gray-500">หมายเหตุ</span>
-                    <p className="font-medium text-gray-900 bg-gray-50 p-3 rounded-md">
-                      {bookingData.remark}
-                    </p>
-                  </div>
+              <div className="flex items-center justify-between">
+                <DialogTitle className="flex items-center space-x-2">
+                  <Eye className="h-5 w-5 text-blue-600" />
+                  <span>ข้อมูลผู้เข้าพัก - {selectedRoomForView?.name}</span>
+                </DialogTitle>
+                {!isEditMode && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                    onClick={toggleEditMode}
+                  >
+                    <Pencil className="h-4 w-4 mr-1" />
+                    แก้ไข
+                  </Button>
                 )}
               </div>
-            </div>
+            </DialogHeader>
 
-            <div className="flex justify-end pt-4 border-t mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsOpenViewDialog(false)}
-              >
-                ปิด
-              </Button>
-            </div>
+            <form onSubmit={handleUpdateBooking}>
+              <div className="space-y-6">
+                {/* ส่วนข้อมูลผู้เข้าพัก */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                    <Users className="h-5 w-5 text-blue-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      ข้อมูลผู้เข้าพัก
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <span className="text-xs text-gray-500">ชื่อ-นามสกุล</span>
+                      {isEditMode ? (
+                        <Input
+                          type="text"
+                          value={bookingData.customerName}
+                          onChange={(e) => setBookingData({ ...bookingData, customerName: e.target.value })}
+                          required
+                        />
+                      ) : (
+                        <p className="font-medium text-gray-900">
+                          {bookingData.customerName || "-"}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-gray-500">เบอร์โทรศัพท์</span>
+                      {isEditMode ? (
+                        <Input
+                          type="tel"
+                          value={bookingData.customerPhone}
+                          onChange={(e) => setBookingData({ ...bookingData, customerPhone: e.target.value })}
+                          required
+                        />
+                      ) : (
+                        <p className="font-medium text-gray-900">
+                          {bookingData.customerPhone || "-"}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-gray-500">เลขบัตรประชาชน</span>
+                      {isEditMode ? (
+                        <Input
+                          type="text"
+                          value={bookingData.customerCardId}
+                          onChange={(e) => setBookingData({ ...bookingData, customerCardId: e.target.value })}
+                          required
+                        />
+                      ) : (
+                        <p className="font-medium text-gray-900">
+                          {bookingData.customerCardId || "-"}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-gray-500">เพศ</span>
+                      {isEditMode ? (
+                        <select
+                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                          value={bookingData.customerGender}
+                          onChange={(e) => setBookingData({ ...bookingData, customerGender: e.target.value })}
+                          required
+                        >
+                          <option value="">เลือกเพศ</option>
+                          <option value="male">ชาย</option>
+                          <option value="female">หญิง</option>
+                          <option value="other">อื่นๆ</option>
+                        </select>
+                      ) : (
+                        <p className="font-medium text-gray-900">
+                          {bookingData.customerGender === "male"
+                            ? "ชาย"
+                            : bookingData.customerGender === "female"
+                            ? "หญิง"
+                            : bookingData.customerGender === "other"
+                            ? "อื่นๆ"
+                            : "-"}
+                        </p>
+                      )}
+                    </div>
+                    <div className="md:col-span-2 space-y-1">
+                      <span className="text-xs text-gray-500">ที่อยู่</span>
+                      {isEditMode ? (
+                        <textarea
+                          className="flex min-h-15 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                          value={bookingData.customerAddress}
+                          onChange={(e) => setBookingData({ ...bookingData, customerAddress: e.target.value })}
+                          rows={3}
+                          required
+                        />
+                      ) : (
+                        <p className="font-medium text-gray-900">
+                          {bookingData.customerAddress || "-"}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ส่วนข้อมูลการจอง */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                    <CalendarCheck className="h-5 w-5 text-green-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      ข้อมูลการจอง
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <span className="text-xs text-gray-500">วันที่เข้าพัก</span>
+                      {isEditMode ? (
+                        <Input
+                          type="date"
+                          value={bookingData.stayAt instanceof Date ? bookingData.stayAt.toISOString().split("T")[0] : ""}
+                          onChange={(e) => setBookingData({ ...bookingData, stayAt: new Date(e.target.value) })}
+                          required
+                        />
+                      ) : (
+                        <p className="font-medium text-gray-900">
+                          {bookingData.stayAt
+                            ? new Date(bookingData.stayAt).toLocaleDateString("th-TH")
+                            : "-"}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-gray-500">วันที่ออก</span>
+                      {isEditMode ? (
+                        <Input
+                          type="date"
+                          value={bookingData.stayUntil instanceof Date ? bookingData.stayUntil.toISOString().split("T")[0] : ""}
+                          onChange={(e) => setBookingData({ ...bookingData, stayUntil: e.target.value ? new Date(e.target.value) : undefined })}
+                        />
+                      ) : (
+                        <p className="font-medium text-gray-900">
+                          {bookingData.stayUntil
+                            ? new Date(bookingData.stayUntil).toLocaleDateString("th-TH")
+                            : "ไม่ระบุ"}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-gray-500">เงินมัดจำ</span>
+                      {isEditMode ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          value={bookingData.deposit}
+                          onChange={(e) => setBookingData({ ...bookingData, deposit: parseInt(e.target.value) || 0 })}
+                          required
+                        />
+                      ) : (
+                        <p className="font-medium text-green-600">
+                          {bookingData.deposit?.toLocaleString() || "0"} บาท
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 mt-4">
+                    <span className="text-xs text-gray-500">หมายเหตุ</span>
+                    {isEditMode ? (
+                      <textarea
+                        className="flex min-h-20 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                        value={bookingData.remark}
+                        onChange={(e) => setBookingData({ ...bookingData, remark: e.target.value })}
+                        rows={3}
+                      />
+                    ) : (
+                      <p className="font-medium text-gray-900 bg-gray-50 p-3 rounded-md">
+                        {bookingData.remark || "-"}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* ส่วนข้อมูลมิเตอร์ */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                    <div className="flex items-center gap-1">
+                      <Droplets className="h-5 w-5 text-cyan-600" />
+                      <Zap className="h-5 w-5 text-yellow-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      ข้อมูลมิเตอร์
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-cyan-50 rounded-lg p-4 border border-cyan-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Droplets className="h-4 w-4 text-cyan-600" />
+                        <span className="text-sm text-gray-600">หน่วยน้ำ</span>
+                      </div>
+                      {isEditMode ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          value={editWaterUnit}
+                          onChange={(e) => setEditWaterUnit(parseInt(e.target.value) || 0)}
+                          className="bg-white"
+                        />
+                      ) : (
+                        <p className="text-2xl font-bold text-cyan-700">
+                          {editWaterUnit.toLocaleString()}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">หน่วย</p>
+                    </div>
+
+                    <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Zap className="h-4 w-4 text-yellow-600" />
+                        <span className="text-sm text-gray-600">หน่วยไฟ</span>
+                      </div>
+                      {isEditMode ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          value={editElectricityUnit}
+                          onChange={(e) => setEditElectricityUnit(parseInt(e.target.value) || 0)}
+                          className="bg-white"
+                        />
+                      ) : (
+                        <p className="text-2xl font-bold text-yellow-700">
+                          {editElectricityUnit.toLocaleString()}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">หน่วย</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t mt-6">
+                {isEditMode ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsEditMode(false)}
+                    >
+                      ยกเลิก
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-blue-600 hover:bg-blue-700"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "กำลังบันทึก..." : "บันทึก"}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                      onClick={toggleEditMode}
+                    >
+                      <Pencil className="h-4 w-4 mr-1" />
+                      แก้ไขข้อมูล
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsOpenViewDialog(false)}
+                    >
+                      ปิด
+                    </Button>
+                  </>
+                )}
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
 
@@ -998,6 +1237,8 @@ const Rooms = () => {
                       type="number"
                       min="0"
                       placeholder="กรอกหน่วยน้ำเริ่มต้น"
+                      value={waterUnit}
+                      onChange={e => setwaterUnit(Number(e.target.value))}
                     />
                   </div>
 
@@ -1008,6 +1249,8 @@ const Rooms = () => {
                       type="number"
                       min="0"
                       placeholder="กรอกหน่วยไฟเริ่มต้น"
+                      value={electricityUnit}
+                      onChange={e => setElectricityUnit(Number(e.target.value))}
                     />
                   </div>
                 </div>

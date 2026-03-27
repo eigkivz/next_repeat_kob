@@ -13,7 +13,27 @@ export async function GET(
                 createdAt: "desc"
             },
             include: {
-                roomType: true
+                roomType: true,
+                bookings: {
+                    include: {
+                        waterLog: {
+                            orderBy: {
+                                createdAt: "desc",
+                            },
+                            take: 1
+                        },
+                        electricityLogs: {
+                            orderBy: {
+                                createdAt: "desc"
+                            },
+                            take: 1
+                        }
+                    },
+                    orderBy: {
+                        createdAt: "desc"
+                    },
+                    take: 1
+                }
             },
             where: {
                 roomTypeId: roomTypeId

@@ -97,6 +97,8 @@ export async function POST(req: Request) {
       data: { statusEmpty: "notempty" },
     });
 
+    await updateUnitOfWaterAndElectricity(bookingId, waterUnit, electricityUnit);
+
     return NextResponse.json({ message: "จองห้องพักสำเร็จ" }, { status: 200 });
   } catch (error) {
     if (error instanceof z.ZodError) {

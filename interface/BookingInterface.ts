@@ -1,3 +1,6 @@
+import { ElectricityLogInterface } from "./ElectricityLogInterface";
+import { WaterLogInterface } from "./WaterLogInterface";
+
 export interface BookingInterface {
     customerName: string;
     customerPhone: string;
@@ -10,4 +13,6 @@ export interface BookingInterface {
     deposit: number;
     remark?: string;
     roomId: string;
+    waterLog: WaterLogInterface[],
+    electricityLogs: ElectricityLogInterface[]
 }
