@@ -13,7 +13,32 @@ export async function GET(
             },
             include: {
                 roomType: true,
-                bookings: true
+                bookings: {
+                    orderBy: {
+                        createdAt: "desc"
+                    },
+                    take: 1,
+                    select: {
+                        waterLog: {
+                            orderBy: { createdAt: "desc" },
+                            take: 1
+                        },
+                        electricityLogs: {
+                            orderBy: { createdAt: "desc" },
+                            take: 1
+                        },
+                        customerName: true,
+                        customerAddress: true,
+                        customerCardId: true,
+                        customerGender: true,
+                        customerPhone: true,
+                        deposit: true,
+                        remark: true,
+                        roomId: true,
+                        stayAt: true,
+                        stayUntil: true
+                    }
+                }
             }
         });
 

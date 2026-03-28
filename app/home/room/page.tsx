@@ -678,7 +678,10 @@ const Rooms = () => {
                       </Button>
                     )}
                   <Button
-                    onClick={() => handleBookRoom(room)}
+                    onClick={() => {   
+                      clearBookingForm()
+                      handleBookRoom(room) 
+                    }}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                     disabled={
                       room.status === "active"
