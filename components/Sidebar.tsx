@@ -19,6 +19,14 @@ const Sidebar = () => {
         <i className="fa-solid fa-hotel"></i>
         <span>Room</span>
         </Link>
+        <Link href="/home/money-added" className="space-x-3">
+          <i className="fa-solid fa-money-bill-wave"></i>
+          <span>ค่าใช้จ่ายเพิ่มเติม</span>
+        </Link>
+        <Link href="/home/water-and-electricity-price" className="space-x-3">
+          <i className="fa-solid fa-wand-magic-sparkles"></i>
+          <span>ราคาไฟและน้ำ</span>
+        </Link>
       </div>
     </div>
   );
